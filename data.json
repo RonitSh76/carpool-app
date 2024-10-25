@@ -1,1 +1,24 @@
-
+{
+  "children": [
+    { "id": 1, "name": "יואב", "isAttending": false },
+    { "id": 2, "name": "ליאור", "isAttending": false },
+    { "id": 3, "name": "עומר", "isAttending": false },
+    { "id": 4, "name": "יובל", "isAttending": false },
+    { "id": 5, "name": "עידו", "isAttending": false },
+    { "id": 6, "name": "אלעד", "isAttending": false },
+    { "id": 7, "name": "עמית", "isAttending": false },
+    { "id": 8, "name": "אריאל", "isAttending": false },
+    { "id": 9, "name": "תמר", "isAttending": false }
+  ],
+  "parents": [
+    { "id": 1, "name": "רונית", "drivingTo": false, "drivingFrom": false, "seats": 4 },
+    { "id": 2, "name": "בתיה", "drivingTo": false, "drivingFrom": false, "seats": 3 },
+    { "id": 3, "name": "איריס", "drivingTo": false, "drivingFrom": false, "seats": 5 },
+    { "id": 4, "name": "שחר", "drivingTo": false, "drivingFrom": false, "seats": 4 },
+    { "id": 5, "name": "מורן", "drivingTo": false, "drivingFrom": false, "seats": 6 },
+    { "id": 6, "name": "אורלי", "drivingTo": false, "drivingFrom": false, "seats": 4 },
+    { "id": 7, "name": "הדס", "drivingTo": false, "drivingFrom": false, "seats": 5 },
+    { "id": 8, "name": "גלי", "drivingTo": false, "drivingFrom": false, "seats": 3 }
+  ],
+  "lastUpdate": "25/10/2024, 10:30:00"
+}
