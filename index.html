@@ -508,12 +508,6 @@ async function checkGitHubAccess() {
     }
 }
 
-// הוסיפי בתחילת פונקציית saveToGitHub:
-const hasAccess = await checkGitHubAccess();
-if (!hasAccess) {
-    alert('אין הרשאות גישה ל-GitHub. אנא בדקי את הטוקן והרשאות.');
-    return;
-}
         
         // אתחול הטבלאות בטעינת הדף
         window.onload = function() {
