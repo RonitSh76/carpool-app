@@ -105,19 +105,26 @@
             text-align: center;
         }
 
-        .save-btn {
-            background-color: #4CAF50;
-            color: white;
+        .btn {
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.3s;
+            margin: 5px;
+            color: white;
         }
 
-        .save-btn:hover {
-            background-color: #45a049;
+        .save-btn {
+            background-color: #4CAF50;
+        }
+
+        .github-btn {
+            background-color: #24292e;
+        }
+
+        .github-btn:hover {
+            background-color: #2f363d;
         }
 
         h2 { margin: 0 0 8px 0; }
@@ -127,7 +134,6 @@
             .rides-grid {
                 grid-template-columns: 1fr;
             }
-            
             .container {
                 padding: 8px;
             }
@@ -187,12 +193,17 @@
         </div>
 
         <div class="card" style="text-align: center;">
-            <button onclick="saveToFile()" class="save-btn">שמירת נתונים</button>
+            <button onclick="saveToGitHub()" class="btn github-btn">שמירה ל-GitHub</button>
         </div>
     </div>
 
     <script>
-        // נתונים ראשוניים - יוצגו מיד בטעינת הדף
+        // === הגדרות GitHub - החלף את הערכים הבאים ===
+        const GITHUB_TOKEN = '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';  // הכנס את הטוקן שלך כאן
+        const GITHUB_USERNAME = 'RonitSh76';     // הכנס את שם המשתמש שלך כאן
+        const GITHUB_REPO = 'carpool-app';              // הכנס את שם המאגר שלך כאן
+
+        // נתונים
         let children = [
             { id: 1, name: 'יואב', isAttending: false },
             { id: 2, name: 'ליאור', isAttending: false },
@@ -216,20 +227,62 @@
             { id: 8, name: 'גלי', drivingTo: false, drivingFrom: false, seats: 3 }
         ];
 
-        function saveToFile() {
+// פונקציית שמירה ל-GitHub
+        async function saveToGitHub() {
             const data = {
                 children: children,
                 parents: parents,
                 lastUpdate: new Date().toLocaleString()
             };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `הסעות-${new Date().toLocaleDateString()}.json`;
-            a.click();
+
+            let sha = '';
+            try {
+                const existingFile = await fetch(
+                    `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                if (existingFile.ok) {
+                    const fileData = await existingFile.json();
+                    sha = fileData.sha;
+                }
+            } catch (error) {
+                console.log('File does not exist yet');
+            }
+
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            <!-- message: 'Update carpool data', -->
+                            content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+                            sha: sha || undefined
+                        })
+                    }
+                );
+
+                if (response.ok) {
+                    alert('הנתונים נשמרו בהצלחה!');
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                alert('שגיאה בשמירת הנתונים');
+                console.error(error);
+            }
         }
 
+        // פונקציות עזר
         function shuffleArray(array) {
             const newArray = [...array];
             for (let i = newArray.length - 1; i > 0; i--) {
@@ -260,8 +313,8 @@
             updateRidesAssignment();
         }
 
+        // פונקציית הצגת הטבלאות
         function renderTables() {
-            // טבלת ילדים
             const childrenHTML = children.map((child, index) => `
                 <tr class="${child.isAttending ? 'attending' : ''}">
                     <td>${index + 1}</td>
@@ -274,7 +327,6 @@
             `).join('');
             document.getElementById('children-table').innerHTML = childrenHTML;
 
-            // טבלת הורים
             const parentsHTML = parents.map((parent, index) => `
                 <tr class="${parent.drivingTo || parent.drivingFrom ? 'driving' : ''}">
                     <td>${index + 1}</td>
@@ -295,7 +347,6 @@
             `).join('');
             document.getElementById('parents-table').innerHTML = parentsHTML;
 
-            // סטטיסטיקות
             const attendingCount = children.filter(c => c.isAttending).length;
             document.getElementById('attendance-stats').innerText = 
                 `נוכחים: ${attendingCount} מתוך ${children.length}`;
@@ -306,6 +357,7 @@
                 `מקומות - הלוך: ${toSeats}, חזור: ${fromSeats}`;
         }
 
+        // פונקציית שיבוץ ההסעות
         function updateRidesAssignment() {
             let attendingChildren = children.filter(child => child.isAttending);
             attendingChildren = shuffleArray(attendingChildren);
@@ -346,116 +398,11 @@
             document.getElementById('from-rides').innerHTML = assignRides(driversFrom, 'from');
         }
 
-        // הצגת הטבלאות בטעינת הדף
-        renderTables();
-        updateRidesAssignment();
-
-/*
-async function saveToGitHub() {
-    const token = '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'; // החלף עם הטוקן שלך
-    const username = 'RonitSh76';    // החלף עם שם המשתמש שלך
-    const repo = 'carpool-app';             // החלף עם שם המאגר שלך
-
-    const data = {
-        children: children,
-        parents: parents,
-        lastUpdate: new Date().toLocaleString()
-    };
-
-    // בדיקה אם הקובץ כבר קיים
-    let sha = '';
-    try {
-        const existingFile = await fetch(
-            `https://api.github.com/repos/${username}/${repo}/contents/data.json`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            }
-        );
-        if (existingFile.ok) {
-            const fileData = await existingFile.json();
-            sha = fileData.sha;
-        }
-    } catch (error) {
-        console.log('File does not exist yet');
-    }
-
-    try {
-        const response = await fetch(
-            `https://api.github.com/repos/${username}/${repo}/contents/data.json`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: 'Update carpool data',
-                    content: btoa(JSON.stringify(data, null, 2)),
-                    sha: sha || undefined
-                })
-            }
-        );
-
-        if (response.ok) {
-            alert('הנתונים נשמרו בהצלחה!');
-        } else {
-            throw new Error('Failed to save');
-        }
-    } catch (error) {
-        alert('שגיאה בשמירת הנתונים');
-        console.error(error);
-    }
-}
-
-// פונקציה לטעינת נתונים מ-GitHub
-async function loadFromGitHub() {
-    const username = 'YOUR_GITHUB_USERNAME';
-    const repo = 'YOUR_REPO_NAME';
-
-    try {
-        const response = await fetch(
-            `https://api.github.com/repos/${username}/${repo}/contents/data.json`
-        );
-        
-        if (response.ok) {
-            const fileData = await response.json();
-            const content = JSON.parse(atob(fileData.content));
-            
-            children = content.children;
-            parents = content.parents;
-            
+        // אתחול הטבלאות בטעינת הדף
+        window.onload = function() {
             renderTables();
             updateRidesAssignment();
-            alert('הנתונים נטענו בהצלחה!');
         }
-    } catch (error) {
-        alert('שגיאה בטעינת הנתונים');
-        console.error(error);
-    }
-}
-     <div class="card" style="text-align: center;">
-    <button onclick="saveToGitHub()" class="github-btn">שמירה ב-GitHub</button>
-    <button onclick="loadFromGitHub()" class="github-btn">טעינה מ-GitHub</button>
-</div>
-
-     .github-btn {
-    background-color: #24292e;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 5px;
-    font-size: 14px;
-}
-
-.github-btn:hover {
-    background-color: #2f363d;
-}  */ 
     </script>
 </body>
 </html>
-initial commit
