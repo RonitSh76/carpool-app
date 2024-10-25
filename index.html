@@ -206,14 +206,14 @@
         ];
 
         let parents = [
-            { id: 1, name: 'רונית', drivingTo: false, drivingFrom: false, seats: 6 },
-            { id: 2, name: 'בתיה', drivingTo: false, drivingFrom: false, seats: 6 },
-            { id: 3, name: 'איריס', drivingTo: false, drivingFrom: false, seats:6 },
+            { id: 1, name: 'רונית', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 2, name: 'בתיה', drivingTo: false, drivingFrom: false, seats: 3 },
+            { id: 3, name: 'איריס', drivingTo: false, drivingFrom: false, seats: 5 },
             { id: 4, name: 'שחר', drivingTo: false, drivingFrom: false, seats: 4 },
-            { id: 5, name: 'מורן', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 5, name: 'מורן', drivingTo: false, drivingFrom: false, seats: 6 },
             { id: 6, name: 'אורלי', drivingTo: false, drivingFrom: false, seats: 4 },
-            { id: 7, name: 'הדס', drivingTo: false, drivingFrom: false, seats: 4 },
-            { id: 8, name: 'גלי', drivingTo: false, drivingFrom: false, seats: 4 }
+            { id: 7, name: 'הדס', drivingTo: false, drivingFrom: false, seats: 5 },
+            { id: 8, name: 'גלי', drivingTo: false, drivingFrom: false, seats: 3 }
         ];
 
         function saveToFile() {
@@ -345,6 +345,11 @@
             document.getElementById('to-rides').innerHTML = assignRides(driversTo, 'to');
             document.getElementById('from-rides').innerHTML = assignRides(driversFrom, 'from');
         }
+
+        // הצגת הטבלאות בטעינת הדף
+        renderTables();
+        updateRidesAssignment();
+ 
 
         // הצגת הטבלאות בטעינת הדף
         renderTables();
