@@ -427,7 +427,9 @@
             
             if (existingFile.ok) {
                 const fileData = await existingFile.json();
+                console.log("hererr");
                 sha = fileData.sha;
+                console.log("hello");
                 console.log('Existing file found');
             }
         } catch (error) {
