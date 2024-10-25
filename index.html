@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת הסעות</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 12px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+            padding: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            background: white;
+        }
+
+        th, td {
+            padding: 6px 4px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+
+        .compact-table th:nth-child(1),
+        .compact-table td:nth-child(1) {
+            width: 30px;
+            padding-right: 4px;
+            padding-left: 0;
+        }
+
+        .compact-table th:last-child,
+        .compact-table td:last-child {
+            width: 50px;
+            padding-right: 0;
+            padding-left: 4px;
+        }
+
+        .parents-table th:nth-child(3),
+        .parents-table td:nth-child(3),
+        .parents-table th:nth-child(4),
+        .parents-table td:nth-child(4) {
+            width: 45px;
+            padding: 6px 2px;
+        }
+
+        .parents-table th:last-child,
+        .parents-table td:last-child {
+            width: 60px;
+        }
+
+        .attending { background-color: #e8f5e9; }
+        .driving { background-color: #e3f2fd; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .rides-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .ride-card {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .stats {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .missing-rides {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        input[type="number"] {
+            width: 40px;
+            padding: 2px;
+            text-align: center;
+        }
+
+        .save-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+
+        h2 { margin: 0 0 8px 0; }
+        h3 { margin: 0 0 12px 0; }
+
+        @media (max-width: 768px) {
+            .rides-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h2>רשימת נוכחות</h2>
+                <div class="stats" id="attendance-stats"></div>
+            </div>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>שם החניך/ה</th>
+                        <th>מגיע/ה</th>
+                    </tr>
+                </thead>
+                <tbody id="children-table"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="header">
+                <h2>הסעות הורים</h2>
+                <div class="stats" id="rides-stats"></div>
+            </div>
+            <table class="compact-table parents-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>שם ההורה</th>
+                        <th>הלוך</th>
+                        <th>חזור</th>
+                        <th>מקומות</th>
+                    </tr>
+                </thead>
+                <tbody id="parents-table"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>שיבוץ הסעות</h2>
+            <div class="rides-grid">
+                <div>
+                    <h3>הסעות הלוך</h3>
+                    <div id="to-rides"></div>
+                </div>
+                <div>
+                    <h3>הסעות חזור</h3>
+                    <div id="from-rides"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center;">
+            <button onclick="saveToFile()" class="save-btn">שמירת נתונים</button>
+        </div>
+    </div>
+
+    <script>
+        // נתונים ראשוניים - יוצגו מיד בטעינת הדף
+        let children = [
+            { id: 1, name: 'יואב', isAttending: false },
+            { id: 2, name: 'ליאור', isAttending: false },
+            { id: 3, name: 'עומר', isAttending: false },
+            { id: 4, name: 'יובל', isAttending: false },
+            { id: 5, name: 'עידו', isAttending: false },
+            { id: 6, name: 'אלעד', isAttending: false },
+            { id: 7, name: 'עמית', isAttending: false },
+            { id: 8, name: 'אריאל', isAttending: false },
+            { id: 9, name: 'תמר', isAttending: false }
+        ];
+
+        let parents = [
+            { id: 1, name: 'רונית', drivingTo: false, drivingFrom: false, seats: 6 },
+            { id: 2, name: 'בתיה', drivingTo: false, drivingFrom: false, seats: 6 },
+            { id: 3, name: 'איריס', drivingTo: false, drivingFrom: false, seats:6 },
+            { id: 4, name: 'שחר', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 5, name: 'מורן', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 6, name: 'אורלי', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 7, name: 'הדס', drivingTo: false, drivingFrom: false, seats: 4 },
+            { id: 8, name: 'גלי', drivingTo: false, drivingFrom: false, seats: 4 }
+        ];
+
+        function saveToFile() {
+            const data = {
+                children: children,
+                parents: parents,
+                lastUpdate: new Date().toLocaleString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `הסעות-${new Date().toLocaleDateString()}.json`;
+            a.click();
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function updateChildAttendance(id) {
+            const child = children.find(c => c.id === id);
+            child.isAttending = !child.isAttending;
+            renderTables();
+            updateRidesAssignment();
+        }
+
+        function updateParentDriving(id, direction) {
+            const parent = parents.find(p => p.id === id);
+            parent[direction] = !parent[direction];
+            renderTables();
+            updateRidesAssignment();
+        }
+
+        function updateParentSeats(id, seats) {
+            const parent = parents.find(p => p.id === id);
+            parent.seats = parseInt(seats) || 0;
+            renderTables();
+            updateRidesAssignment();
+        }
+
+        function renderTables() {
+            // טבלת ילדים
+            const childrenHTML = children.map((child, index) => `
+                <tr class="${child.isAttending ? 'attending' : ''}">
+                    <td>${index + 1}</td>
+                    <td>${child.name}</td>
+                    <td style="text-align: center">
+                        <input type="checkbox" ${child.isAttending ? 'checked' : ''} 
+                               onchange="updateChildAttendance(${child.id})">
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('children-table').innerHTML = childrenHTML;
+
+            // טבלת הורים
+            const parentsHTML = parents.map((parent, index) => `
+                <tr class="${parent.drivingTo || parent.drivingFrom ? 'driving' : ''}">
+                    <td>${index + 1}</td>
+                    <td>${parent.name}</td>
+                    <td style="text-align: center">
+                        <input type="checkbox" ${parent.drivingTo ? 'checked' : ''} 
+                               onchange="updateParentDriving(${parent.id}, 'drivingTo')">
+                    </td>
+                    <td style="text-align: center">
+                        <input type="checkbox" ${parent.drivingFrom ? 'checked' : ''} 
+                               onchange="updateParentDriving(${parent.id}, 'drivingFrom')">
+                    </td>
+                    <td style="text-align: center">
+                        <input type="number" min="0" max="8" value="${parent.seats}"
+                               onchange="updateParentSeats(${parent.id}, this.value)">
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('parents-table').innerHTML = parentsHTML;
+
+            // סטטיסטיקות
+            const attendingCount = children.filter(c => c.isAttending).length;
+            document.getElementById('attendance-stats').innerText = 
+                `נוכחים: ${attendingCount} מתוך ${children.length}`;
+
+            const toSeats = parents.filter(p => p.drivingTo).reduce((sum, p) => sum + p.seats, 0);
+            const fromSeats = parents.filter(p => p.drivingFrom).reduce((sum, p) => sum + p.seats, 0);
+            document.getElementById('rides-stats').innerText = 
+                `מקומות - הלוך: ${toSeats}, חזור: ${fromSeats}`;
+        }
+
+        function updateRidesAssignment() {
+            let attendingChildren = children.filter(child => child.isAttending);
+            attendingChildren = shuffleArray(attendingChildren);
+            
+            const driversTo = parents.filter(parent => parent.drivingTo);
+            const driversFrom = parents.filter(parent => parent.drivingFrom);
+
+            function assignRides(drivers, direction) {
+                let html = '';
+                let currentChildIndex = 0;
+                
+                const shuffledDrivers = shuffleArray(drivers);
+                
+                shuffledDrivers.forEach(driver => {
+                    const assignedChildren = [];
+                    for (let i = 0; i < driver.seats && currentChildIndex < attendingChildren.length; i++) {
+                        assignedChildren.push(attendingChildren[currentChildIndex]);
+                        currentChildIndex++;
+                    }
+
+                    html += `
+                        <div class="ride-card">
+                            <div><strong>${driver.name}</strong> (${assignedChildren.length}/${driver.seats})</div>
+                            <div>${assignedChildren.map(child => child.name).join(', ') || 'אין נוסעים'}</div>
+                        </div>
+                    `;
+                });
+
+                const unassignedCount = Math.max(0, attendingChildren.length - currentChildIndex);
+                if (unassignedCount > 0) {
+                    html += `<div class="missing-rides">* ${unassignedCount} ללא הסעה</div>`;
+                }
+
+                return html;
+            }
+
+            document.getElementById('to-rides').innerHTML = assignRides(driversTo, 'to');
+            document.getElementById('from-rides').innerHTML = assignRides(driversFrom, 'from');
+        }
+
+        // הצגת הטבלאות בטעינת הדף
+        renderTables();
+        updateRidesAssignment();
+    </script>
+</body>
+</html>
+Initial commit
