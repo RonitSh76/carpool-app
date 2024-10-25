@@ -193,12 +193,40 @@
             </div>
         </div>
 
-        <div class="card" style="text-align: center;">
-            <button onclick="saveToGitHub()" class="btn github-btn">שמירה ל-GitHub</button>
-        </div>
+       <div class="card" style="text-align: center;">
+    <button onclick="saveToGitHub()" class="btn github-btn">שמירה ל-GitHub</button>
+</div>
     </div>
 
     <script>
+        // הוסיפי בתחילת הקובץ:
+async function testGitHubConnection() {
+    try {
+        const response = await fetch(`https://api.github.com/user`, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`
+            }
+        });
+        const data = await response.json();
+        console.log('GitHub connection test:', data);
+        return response.ok;
+    } catch (error) {
+        console.error('GitHub connection test failed:', error);
+        return false;
+    }
+}
+
+// קריאה לבדיקה בטעינת הדף
+window.onload = async function() {
+    renderTables();
+    updateRidesAssignment();
+    
+    // בדיקת חיבור ל-GitHub
+    const connected = await testGitHubConnection();
+    if (!connected) {
+        console.error('GitHub connection failed - check token and permissions');
+    }
+}
         // === הגדרות GitHub - החלף את הערכים הבאים ===
         const GITHUB_TOKEN = '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';  // הכנס את הטוקן שלך כאן
         const GITHUB_USERNAME = 'RonitSh76';     // הכנס את שם המשתמש שלך כאן
@@ -296,7 +324,7 @@
 
         function updateChildAttendance(id) {
             const child = children.find(c => c.id === id);
-            child.isAttending = !child.isAttending;
+            child.isAttending = !child.isAttending;save
             renderTables();
             updateRidesAssignment();
         }
@@ -399,11 +427,12 @@
             document.getElementById('to-rides').innerHTML = assignRides(driversTo, 'to');
             document.getElementById('from-rides').innerHTML = assignRides(driversFrom, 'from');
         }
-        async function saveToGitHub() {
+       async function saveToGitHub() {
     try {
-        // בדיקה שכל הפרטים קיימים
+        // בדיקת הגדרות
+        console.log('Checking GitHub settings...');
         if (!GITHUB_TOKEN || !GITHUB_USERNAME || !GITHUB_REPO) {
-            alert('חסרים פרטי התחברות ל-GitHub. אנא בדוק את ההגדרות.');
+            alert('חסרים פרטי התחברות ל-GitHub');
             return;
         }
 
@@ -413,14 +442,14 @@
             lastUpdate: new Date().toLocaleString()
         };
 
+        // בדיקת קובץ קיים
         let sha = '';
         try {
-            console.log('Checking for existing file...');
             const existingFile = await fetch(
                 `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`,
                 {
                     headers: {
-                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                        'Authorization': `token ${GITHUB_TOKEN}`,  // שימי לב לשינוי מ-Bearer ל-token
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 }
@@ -428,22 +457,19 @@
             
             if (existingFile.ok) {
                 const fileData = await existingFile.json();
-                console.log("hererr");
                 sha = fileData.sha;
-                console.log("hello");
-                console.log('Existing file found');
             }
         } catch (error) {
-            console.log('No existing file found:', error);
+            console.log('No existing file');
         }
 
-        console.log('Attempting to save...');
+        // שמירת הנתונים
         const response = await fetch(
             `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`,
             {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Authorization': `token ${GITHUB_TOKEN}`,  // שימי לב לשינוי מ-Bearer ל-token
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -458,14 +484,13 @@
             alert('הנתונים נשמרו בהצלחה!');
         } else {
             const errorData = await response.json();
-            throw new Error(`Failed to save: ${errorData.message}`);
+            throw new Error(`שגיאה בשמירה: ${errorData.message}`);
         }
     } catch (error) {
-        console.error('Error details:', error);
+        console.error('Error:', error);
         alert(`שגיאה בשמירת הנתונים: ${error.message}`);
     }
 }
-
 async function checkGitHubAccess() {
     try {
         const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}`, {
